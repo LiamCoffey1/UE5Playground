@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include <Kismet/KismetMathLibrary.h>
+#include <EventBus/EventBusComponent.h>
+#include <EventInterfaces.h>
 #include "WorldInteractionComponent.generated.h"
 
 
@@ -23,6 +25,8 @@ protected:
 
 public:	
 	// Called every frame
+
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "Interaction"))
 	FString InteractionDisplayName = TEXT("");
@@ -33,5 +37,4 @@ public:
 		Initiator->SetActorRotation(LookAtRotation);
 	}
 
-		
 };

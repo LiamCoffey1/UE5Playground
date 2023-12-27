@@ -107,6 +107,8 @@ APlaygroundCharacter::APlaygroundCharacter()
 	IConsoleManager::Get().RegisterConsoleCommand(TEXT("PerformRecipe"), TEXT("Peforms a recipe"), RecipeCommandDelegate);
 
 	AbilitySystemComponent = CreateDefaultSubobject<UPlaygroundAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	EventBusComponent = CreateDefaultSubobject<UEventBusComponent>(TEXT("EventBus"));
+	Challenges = CreateDefaultSubobject<UChallengerComponent>(TEXT("Challenges"));
 }
 
 void APlaygroundCharacter::SwitchMovementStyle(EMovementStyle newStyle) {
@@ -168,7 +170,7 @@ void APlaygroundCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
+	EventBus = NewObject<UEventBus>(this);
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{

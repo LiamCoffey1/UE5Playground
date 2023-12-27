@@ -99,7 +99,7 @@ public:
 		INotifications* handler = Cast<INotifications>(GetOwner());
 		Notification* alert = NotificationFactory().CreateGameMessageNotification("Quest Complete: " + quest->QuestName);
 		handler->SendNotification(alert);
-		ActiveQuests.Remove(ActiveQuests[questID]);
+		ActiveQuests.RemoveAt(questID);
 	}
 
 protected:

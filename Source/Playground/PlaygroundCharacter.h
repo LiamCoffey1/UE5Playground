@@ -10,8 +10,10 @@
 #include "UObject/NoExportTypes.h"
 #include "InteractionSystem/HarvestingInteractionComponent.h"
 #include "QuestSystem/QuestComponent.h"
+#include <EventBus/EventBusComponent.h>
 #include "AbilitySystem/PlaygroundAbilitySystemComponent.h"
 #include "Dialogue/DialogueBase.h"
+#include <Challenges/ChallengerComponent.h>
 #include "Notifications/Notifications.h"
 #include "PlaygroundCharacter.generated.h"
 
@@ -113,9 +115,12 @@ class HarvestTask : public ITaskInterface {
 public:
 	AActor* Owner;
 	UHarvestingInteractionComponent* harvestEvent;
+	UEventBusComponent* InitiatorEventBus;
 
 	HarvestTask() {}
-	HarvestTask(AActor* Owner, UHarvestingInteractionComponent* harvestEvent) : Owner(Owner), harvestEvent(harvestEvent) {}
+	HarvestTask(AActor* Owner, UHarvestingInteractionComponent* harvestEvent) : Owner(Owner), harvestEvent(harvestEvent) {
+		InitiatorEventBus = Owner->GetComponentByClass<UEventBusComponent>();
+	}
 
 	void Start() override {
 		UAnimInstance* MyAnimInstance = Owner->FindComponentByClass<USkeletalMeshComponent>()->GetAnimInstance();
@@ -133,6 +138,9 @@ public:
 				return;
 			}
 			harvestEvent->UpdateCapacity(harvestEvent->GetCurrentCapacity() - 1);
+			if (InitiatorEventBus) {
+				InitiatorEventBus->PublishEvent("Harvest");
+			}
 			if (harvestEvent->GetCurrentCapacity() <= 0) {
 				Stop();
 				return;
@@ -168,10 +176,12 @@ enum class EDirection: uint8 {
 	BACKWARD_DIAGONAL
 };
 
+
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGameMessageDelegateType, FString, Message);
 
 UCLASS(config = Game)
-class APlaygroundCharacter : public ACharacter, public IAbilitySystemInterface, public INotifications {
+class APlaygroundCharacter : public ACharacter, public IAbilitySystemInterface, public INotifications, public IEventPublisherInterface {
 	GENERATED_BODY()
 
 		UPROPERTY()
@@ -180,6 +190,12 @@ class APlaygroundCharacter : public ACharacter, public IAbilitySystemInterface, 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		USpringArmComponent* CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		UEventBusComponent* EventBusComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UChallengerComponent* Challenges;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		UCameraComponent* FollowCamera;
@@ -207,6 +223,15 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "MyCategory")
 	FGameMessageDelegateType OnGameMessage;
 
+	UEventBus* EventBus;
+	void Subscribe(TScriptInterface<IEventConsumerInterface> Consumer) override {
+		EventBus->Subscribe(Consumer);
+	}
+
+	virtual void PublishEvent(const FString& Message) override {
+		EventBus->PublishEvent(Message);
+	}
+
 	virtual void SendNotification(Notification* notification) override;
 
 	UPROPERTY(BlueprintAssignable, Category = "CustomEvents")
@@ -215,6 +240,7 @@ public:
 	UDialogueBase* dialogue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyCategory")
 	UDialogueStage* currentStage;
+
 
 	UFUNCTION()
 	void ChangeStage(int newStage) {
